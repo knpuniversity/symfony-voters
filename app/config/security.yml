@@ -1,12 +1,15 @@
 security:
     providers:
         in_memory:
-            memory: ~
+            memory:
+                users:
+                    ryan:  { password: cookie, roles: 'ROLE_COOKIE_ENJOYER' }
+                    leanna: { password: cookie, roles: 'ROLE_COOKIE_MONSTER' }
+
 
     firewalls:
-        dev:
-            pattern: ^/(_(profiler|wdt)|css|images|js)/
-            security: false
-
         default:
+            pattern: ^/
             anonymous: ~
+            form_login: ~
+            logout: ~

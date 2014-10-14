@@ -35,6 +35,11 @@ class Post
      */
     private $contents;
 
+    /**
+     * @ORM\Column(name="author_username")
+     */
+    private $authorUsername;
+
 
     /**
      * Get id
@@ -90,5 +95,21 @@ class Post
     public function getContents()
     {
         return $this->contents;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getAuthorUsername()
+    {
+        return $this->authorUsername;
+    }
+
+    /**
+     * @param mixed $authorUsername
+     */
+    public function setAuthorUsername($authorUsername)
+    {
+        $this->authorUsername = $authorUsername;
     }
 }
