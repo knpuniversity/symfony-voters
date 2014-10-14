@@ -11,6 +11,14 @@
     <body>
         <div class="container">
 
+            <div class="row">
+                <div class="col-md-2 col-md-offset-10">
+                    {% if is_granted('IS_AUTHENTICATED_REMEMBERED') %}
+                        <a href="{{ path('logout') }}">Logout {{ app.user.username }}</a>
+                    {% endif %}
+                </div>
+            </div>
+
             <div class="page-header">
                 <h1>KnpUniversity: Cookies and Voters</h1>
                 <p class="lead">A tutorial in not letting someone else eat your delicious cookies using Security Voters</p>
