@@ -1,5 +1,0 @@
-AppBundle\Entity\Post:
-    post{1..10}:
-        title:          <sentence()>
-        contents:       <paragraph(3)>
-        authorUsername: <randomElement('ryan', 'leanna')>

@@ -4,7 +4,7 @@ namespace AppBundle\DataFixtures\ORM;
 
 use Hautelook\AliceBundle\Alice\DataFixtureLoader;
 
-class TestLoader extends DataFixtureLoader
+class BakeCookies extends DataFixtureLoader
 {
     /**
      * {@inheritDoc}
@@ -12,7 +12,7 @@ class TestLoader extends DataFixtureLoader
     protected function getFixtures()
     {
         return  array(
-            __DIR__ . '/posts.yml',
+            __DIR__ . '/recipes.yml',
 
         );
     }

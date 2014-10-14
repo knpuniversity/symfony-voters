@@ -1,0 +1,33 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <h1>Delicious Cookies NOM!</h1>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Flavor</th>
+                <th>Who baked it</th>
+                <th>&nbsp;</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for cookie in cookies %}
+                <tr>
+                    <td>
+                        {{ cookie.flavor }}
+                    </td>
+                    <td>
+                        {{ cookie.bakerUsername }}
+                    </td>
+                    <td>
+                        <form action="{{ path('cookie_nom', {'id': cookie.id}) }}" method="POST">
+                            <button type="submit" class="btn">NOM! <i class="glyphicon glyphicon-cutlery"></i></button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

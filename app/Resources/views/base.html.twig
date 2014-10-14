@@ -9,7 +9,26 @@
         <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}" />
     </head>
     <body>
-        {% block body %}{% endblock %}
+        <div class="container">
+
+            <div class="page-header">
+                <h1>KnpUniversity: Cookies and Voters</h1>
+                <p class="lead">A tutorial in not letting someone else eat your delicious cookies using Security Voters</p>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    {% for flashMessage in app.session.flashbag.get('success') %}
+                        <div class="alert alert-success">
+                            <i class="glyphicon glyphicon-cutlery"></i>
+                            {{ flashMessage }}
+                        </div>
+                    {% endfor %}
+
+                    {% block body %}{% endblock %}
+                </div>
+            </div>
+        </div>
         {% block javascripts %}{% endblock %}
     </body>
 </html>
