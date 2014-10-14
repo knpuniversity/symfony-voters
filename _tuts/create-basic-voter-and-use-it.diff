@@ -1,0 +1,80 @@
+diff --git a/app/config/services.yml b/app/config/services.yml
+index ec79ce6..62acbf2 100644
+--- a/app/config/services.yml
++++ b/app/config/services.yml
+@@ -1 +1,5 @@
+-# put something here...
+\ No newline at end of file
++services:
++    app_cookie_voter:
++        class: AppBundle\Security\CookieVoter
++        tags:
++            - { name: security.voter }
+diff --git a/src/AppBundle/Controller/CookieController.php b/src/AppBundle/Controller/CookieController.php
+index 24f1ec0..6a61723 100644
+--- a/src/AppBundle/Controller/CookieController.php
++++ b/src/AppBundle/Controller/CookieController.php
+@@ -37,7 +37,7 @@ class CookieController extends Controller
+             throw $this->createNotFoundException();
+         }
+ 
+-        if ($cookie->getBakerUsername() != $this->getUser()->getUsername()) {
++        if (!$this->isGranted('NOM', $cookie)) {
+             throw $this->createNotFoundException('You did not bake this delicious cookie!');
+         }
+ 
+diff --git a/src/AppBundle/Security/CookieVoter.php b/src/AppBundle/Security/CookieVoter.php
+new file mode 100644
+index 0000000..71cf33e
+--- /dev/null
++++ b/src/AppBundle/Security/CookieVoter.php
+@@ -0,0 +1,48 @@
++<?php
++
++namespace AppBundle\Security;
++
++use Symfony\Component\Security\Core\Authorization\Voter\AbstractVoter;
++use Symfony\Component\Security\Core\User\UserInterface;
++
++class CookieVoter extends AbstractVoter
++{
++    /**
++     * Return an array of supported classes. This will be called by supportsClass
++     *
++     * @return array    an array of supported classes, i.e. array('Acme\DemoBundle\Model\Product')
++     */
++    protected function getSupportedClasses()
++    {
++        return array('AppBundle\Entity\DeliciousCookie');
++    }
++
++    /**
++     * Return an array of supported attributes. This will be called by supportsAttribute
++     *
++     * @return array    an array of supported attributes, i.e. array('CREATE', 'READ')
++     */
++    protected function getSupportedAttributes()
++    {
++        return array('NOM');
++    }
++
++    /**
++     * Perform a single access check operation on a given attribute, object and (optionally) user
++     * It is safe to assume that $attribute and $object's class pass supportsAttribute/supportsClass
++     * $user can be one of the following:
++     *   a UserInterface object (fully authenticated user)
++     *   a string               (anonymously authenticated user)
++     *
++     * @param string $attribute
++     * @param object $object
++     * @param UserInterface|string $user
++     *
++     * @return bool
++     */
++    protected function isGranted($attribute, $object, $user = null)
++    {
++        var_dump($attribute, $object, $user);die;
++    }
++
++} 
+\ No newline at end of file

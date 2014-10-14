@@ -1,0 +1,59 @@
+diff --git a/app/Resources/views/Cookie/index.html.twig b/app/Resources/views/Cookie/index.html.twig
+index 9e28d42..fde19c5 100644
+--- a/app/Resources/views/Cookie/index.html.twig
++++ b/app/Resources/views/Cookie/index.html.twig
+@@ -28,6 +28,11 @@
+                             </form>
+                         {% endif %}
+                     </td>
++                    <td>
++                        {% if is_granted('DONATE', cookie) %}
++                            <a href="">Donate</a>
++                        {% endif %}
++                    </td>
+                 </tr>
+             {% endfor %}
+         </tbody>
+diff --git a/src/AppBundle/Security/CookieVoter.php b/src/AppBundle/Security/CookieVoter.php
+index f25581a..e996e75 100644
+--- a/src/AppBundle/Security/CookieVoter.php
++++ b/src/AppBundle/Security/CookieVoter.php
+@@ -32,7 +32,7 @@ class CookieVoter extends AbstractVoter
+      */
+     protected function getSupportedAttributes()
+     {
+-        return array('NOM');
++        return array('NOM', 'DONATE');
+     }
+ 
+     /**
+@@ -56,15 +56,22 @@ class CookieVoter extends AbstractVoter
+ 
+         $authChecker = $this->container->get('security.authorization_checker');
+ 
+-        if ($authChecker->isGranted('ROLE_COOKIE_MONSTER')) {
+-            return true;
+-        }
++        switch ($attribute) {
++            case 'NOM':
++                if ($authChecker->isGranted('ROLE_COOKIE_MONSTER')) {
++                    return true;
++                }
++
++                if ($object->getBakerUsername() == $user->getUsername()) {
++                    return true;
++                }
+ 
+-        if ($object->getBakerUsername() == $user->getUsername()) {
+-            return true;
++                return false;
++            case 'DONATE':
++                return stripos($object->getFlavor(), 'chocolate') === false;
+         }
+ 
+-        return false;
++        throw new \LogicException('How did we get here!?');
+     }
+ 
+ } 
+\ No newline at end of file

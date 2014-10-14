@@ -1,0 +1,35 @@
+diff --git a/app/Resources/views/Cookie/index.html.twig b/app/Resources/views/Cookie/index.html.twig
+index 5f11c1a..9e28d42 100644
+--- a/app/Resources/views/Cookie/index.html.twig
++++ b/app/Resources/views/Cookie/index.html.twig
+@@ -22,7 +22,7 @@
+                         {{ cookie.bakerUsername }}
+                     </td>
+                     <td>
+-                        {% if cookie.bakerUsername == app.user.username %}
++                        {% if is_granted('NOM', cookie) %}
+                             <form action="{{ path('cookie_nom', {'id': cookie.id}) }}" method="POST">
+                                 <button type="submit" class="btn">NOM! <i class="glyphicon glyphicon-cutlery"></i></button>
+                             </form>
+diff --git a/src/AppBundle/Security/CookieVoter.php b/src/AppBundle/Security/CookieVoter.php
+index 71cf33e..574aca4 100644
+--- a/src/AppBundle/Security/CookieVoter.php
++++ b/src/AppBundle/Security/CookieVoter.php
+@@ -42,7 +42,15 @@ class CookieVoter extends AbstractVoter
+      */
+     protected function isGranted($attribute, $object, $user = null)
+     {
+-        var_dump($attribute, $object, $user);die;
++        if (!$user) {
++            return false;
++        }
++
++        if ($object->getBakerUsername() == $user->getUsername()) {
++            return true;
++        }
++
++        return false;
+     }
+ 
+ } 
+\ No newline at end of file

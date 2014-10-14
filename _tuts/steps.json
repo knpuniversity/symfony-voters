@@ -1,0 +1,35 @@
+{
+    "steps": [
+        {
+            "id": "start",
+            "name": "start",
+            "description": null
+        },
+        {
+            "id": "add-basic-security-logic-in-controller",
+            "name": "Add basic security logic in controller",
+            "description": null
+        },
+        {
+            "id": "create-basic-voter-and-use-it",
+            "name": "Create basic voter and use it",
+            "description": null
+        },
+        {
+            "id": "basic-voter-logic",
+            "name": "Basic voter logic",
+            "description": null
+        },
+        {
+            "id": "allow-role-cookie-monster-to-always-eat",
+            "name": "Allow ROLE_COOKIE_MONSTER to always eat",
+            "description": null
+        },
+        {
+            "id": "add-a-donate-attribute",
+            "name": "Add a DONATE attribute",
+            "description": null
+        }
+    ],
+    "sha": "d60bb893be850619556772f99656ff5c7f0bc436"
+}

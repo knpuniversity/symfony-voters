@@ -1,0 +1,34 @@
+diff --git a/app/Resources/views/Cookie/index.html.twig b/app/Resources/views/Cookie/index.html.twig
+index f981f69..5f11c1a 100644
+--- a/app/Resources/views/Cookie/index.html.twig
++++ b/app/Resources/views/Cookie/index.html.twig
+@@ -22,9 +22,11 @@
+                         {{ cookie.bakerUsername }}
+                     </td>
+                     <td>
+-                        <form action="{{ path('cookie_nom', {'id': cookie.id}) }}" method="POST">
+-                            <button type="submit" class="btn">NOM! <i class="glyphicon glyphicon-cutlery"></i></button>
+-                        </form>
++                        {% if cookie.bakerUsername == app.user.username %}
++                            <form action="{{ path('cookie_nom', {'id': cookie.id}) }}" method="POST">
++                                <button type="submit" class="btn">NOM! <i class="glyphicon glyphicon-cutlery"></i></button>
++                            </form>
++                        {% endif %}
+                     </td>
+                 </tr>
+             {% endfor %}
+diff --git a/src/AppBundle/Controller/CookieController.php b/src/AppBundle/Controller/CookieController.php
+index 7dcfb5c..24f1ec0 100644
+--- a/src/AppBundle/Controller/CookieController.php
++++ b/src/AppBundle/Controller/CookieController.php
+@@ -37,6 +37,10 @@ class CookieController extends Controller
+             throw $this->createNotFoundException();
+         }
+ 
++        if ($cookie->getBakerUsername() != $this->getUser()->getUsername()) {
++            throw $this->createNotFoundException('You did not bake this delicious cookie!');
++        }
++
+         $em->remove($cookie);
+         $em->flush();
+ 
