@@ -318,6 +318,8 @@ as a service and give it a special tag.
 I have an ``app/config/services.yml`` file which I'm importing from my ``config.yml``
 file, so we'll put the service there:
 
+.. code-block:: yaml
+
     # app/config/services.yml
     services:
         app_cookie_voter:
