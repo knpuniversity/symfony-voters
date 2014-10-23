@@ -684,13 +684,13 @@ keep the strings here.
 Go Security Voters Go!
 ----------------------
 
-So security voters are all about solving that case when you need figure out if 
-a user has access to do something to a specific object. They help to keep your 
-template logic and your controller logic really simple and they're
-one of my favorite features so try them out and let me know what you think. 
+So security voters are all about solving that case when you need figure out
+if a user has access to do something to a specific object. They help to keep
+your template logic and your controller logic really simple and they're
+one of my favorite features. So try them out and let me know what you think. 
 
-Symfony also has an ACL system but it's incredibly complex and I only 
-recommend that you use it if you have really complex authorization requirements.
+Symfony also has an ACL system but it's incredibly complex and I only recommend
+that you use it if you have really complex authorization requirements.
 If you can somehow write a few lines of code to figure out if a user has
 access to do something do that in a voter don't worry about ACL.
 
