@@ -147,7 +147,7 @@ you didn't bake this!"::
     }
 
 Now if we try to eat one of Leanna's cookies she catches us with a nice clear
-messag. And of course in the production environment, this would be your 403
+message. And of course in the production environment, this would be your 403
 error page.
 
 .. tip::
