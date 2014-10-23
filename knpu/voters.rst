@@ -1,99 +1,321 @@
-Hey guys! It's getting a little colder in Michigan, Leanna and I are doing a 
-little bit of baking, baking makes me think of security. Specifically the kind 
-of security that says: "no you can't eat my cookie because I baked it" and it's 
-actually has applications inside of her application because a lot of times we 
-need to figure out whether the current user has access to edit, delete or view 
-something. It's because of this we've cooked up a delicious little application 
-which is going to show you one of my favorite and most underutilized features 
-in Symfony: security voters. 
+Symfony Security Voters (free cookies!)
+=======================================
 
-So I'll login using username Ryan password cookie and basically we only have 
-one page in this app which shows us all of these cookies that Ryan and Leanna have 
-baked. Each of those has a nom button which allows me to eat the cookie shows 
-me a nice message and deletes it from the database. Really high-tech stuff. The 
-application is pretty straight forward, we have an app bundle of course and 
-inside of there we have a single entity called `DeliciousCookie`. The most 
-important thing about `DeliciousCookie` is that there's a `baker_username` which 
-stores who actually baked this cookie. 
+Hey guys! It's getting a little colder in Michigan, Leanna and I are doing
+a little bit of baking, and baking makes me think of security. Specifically
+the kind of security that says: "no you can't eat my cookie because I baked it".
+And it actually has use inside of our applications because a lot of times
+we need to figure out whether the current user has access to edit, delete
+or view something. It's because of this we've cooked up a delicious little
+application which is going to show you one of my favorite and most underutilized
+features in Symfony: security voters.
 
-To keep this application simple I don't have a user entity so I'm just using a 
-username string there. right now anybody can eat any cookie no matter who 
-baked it. But our goal is to make it so that you can only eat cookies that 
-you've baked. The cookie controller holds the page that actually lists the 
-cookies and then there's one post only end point which handles actually 
-deleting the cookie in the database and setting that nice flash message. 
+Today's Application: DeliciousCookie
+------------------------------------
 
-The only other interesting thing is security.yml. We have two hard coded users, 
-Ryan and Leanna, and I also have an access control which requires login for 
-everything under /cookies which is why we had to login before we saw our cookie 
-list. We take cookie security very seriously. Preventing me from eating a cookie 
-baked by someone else is actually pretty simple. And what we should do first is 
-just put the logic into our controller.
+So I'll login using username ``ryan`` password ``cookie`` and basically we
+only have one page in this app which shows us all of these cookies that Ryan
+and Leanna have baked. Each of those has a "nom" button which allows me to
+eat the cookie, shows me a nice message and deletes it from the database. Really
+high-tech stuff.
 
-So I'll do that here, if the baker's username does not equal the current user's 
-username we're going to throw that access denied exception and say: "Hey you 
-didn't bake this!" Now if we try to eat one of Leanna's cookies she catches us 
-with a nice clear message and of course in the production environment this would 
-be your 403 error page. 
+The application is pretty straight forward: we have an ``AppBundle`` of course
+and inside of there we have a single entity called ``DeliciousCookie``. The
+most important thing about ``DeliciousCookie`` is that there's a ``bakerUsername``
+property which stores who actually baked this cookie. To keep this application
+simple I don't have a ``User`` entity so I'm just using a username string
+there::
+
+    // src/AppBundle/Entity/DeliciousCookie.php
+    // ...
+
+    /** @ORM\Entity */
+    class DeliciousCookie
+    {
+        // ...
+
+        /**
+         * @ORM\Column()
+         */
+        private $flavor;
+
+        /**
+         * @ORM\Column(name="baker_username")
+         */
+        private $bakerUsername;
+        
+        // ...
+    }
+
+Right now, anybody can eat any cookie no matter who baked it. But our goal
+is to make it so that you can only eat cookies that you've baked. The
+``CookieController`` holds the page that actually lists the cookies and then
+there's one POST-only endpoint which handles actually deleting the cookie
+in the database and setting that nice flash message::
+
+    // src/AppBundle/Controller/CookieController.php
+    // ...
+
+    class CookieController extends Controller
+    {
+        /** @Route("/cookies", name="cookie_list") */
+        public function indexAction()
+        {
+            $cookies = $this->getDoctrine()
+                ->getRepository('AppBundle:DeliciousCookie')
+                ->findAll();
+
+            return $this->render('Cookie/index.html.twig', array(
+                'cookies' => $cookies,
+            ));
+        }
+
+        /**
+         * @Route("/cookies/nom/{id}", name="cookie_nom")
+         * @Method("POST")
+         */
+        public function nomAction(Request $request, $id)
+        {
+            $em = $this->getDoctrine()->getManager();
+            $cookie = $em->getRepository('AppBundle:DeliciousCookie')
+                ->find($id);
+
+            // ...
+
+            $em->remove($cookie);
+            $em->flush();
+
+            // some flash-setting stuff...
+
+            return $this->redirect($url);
+        }
+    }
+
+The only other interesting thing is ``security.yml``. We have two hard-coded
+users: ``ryan`` and ``leanna``, and I also have an ``access_control`` which
+requires login for everything under ``/cookies``, which is why we had to
+login before we saw our cookie list. We take cookie security very seriously:
+
+.. code-block:: yaml
+
+    # app/config/security.yml
+    security:
+        # ...
+
+        providers:
+            in_memory:
+                memory:
+                    users:
+                        ryan:  { password: cookie, roles: 'ROLE_COOKIE_ENJOYER' }
+                        leanna: { password: cookie, roles: 'ROLE_COOKIE_MONSTER' }
+
+
+        firewalls:
+            default:
+                pattern: ^/
+                anonymous: ~
+                form_login: ~
+                logout: ~
+
+        access_control:
+            - { path: ^/cookies, roles: IS_AUTHENTICATED_FULLY }
+
+Preventing Access: The Easy Way
+-------------------------------
+
+Preventing me from eating a cookie baked by someone else is actually pretty
+simple. And what we should do first is just put the logic into our controller.
+So I'll do that here: if the baker's username does not equal the current user's 
+username, we're going to throw that ``AccessDeniedException`` and say: "Hey
+you didn't bake this!"::
+
+    // src/AppBundle/Controller/CookieController.php
+    // ...
+
+    public function nomAction(Request $request, $id)
+    {
+        $em = $this->getDoctrine()->getManager();
+        $cookie = $em->getRepository('AppBundle:DeliciousCookie')
+            ->find($id);
+
+        // ...
+
+        if ($cookie->getBakerUsername() != $this->getUser()->getUsername()) {
+            throw $this->createNotFoundException('You did not bake this delicious cookie!');
+        }
+        // ...
+    }
+
+Now if we try to eat one of Leanna's cookies she catches us with a nice clear
+messag. And of course in the production environment, this would be your 403
+error page.
+
+.. tip::
+
+    See `Error Pages`_ for how to customize your 404, 403 and 500 error
+    pages in production.
 
 So what's the problem with this? The problem is that we also need to go into 
-our twig template and repeat the logic there. And when it comes to security 
-logic, especially security logic that protects cookies, we don't want to 
-repeate it across your application. If you change something later and forget 
-to update part of your security you're going to have a big problem. But for now 
-I'll do it manually and we can see that the nom button hides or shows based on 
-which cookies I actually baked.
+our Twig template and repeat the logic there:
 
-So the goal of a voter is to allow us to centralize that logic so we only have 
-it in one spot. I'll create a security directory which is purely for 
-organization and then put a cookie voter inside of it. I'm using Symfony 2.6 
-for this project which comes with a fantastic new abstract voter class which 
-I'm going to use. If you're using Symfony 2.5 or lower you can actually find 
-this class on the internet and just use it in your project today. Just update 
-the namespace to match your project and then extend it.
+.. code-block:: html+jinja
 
-This class doesn't have any external dependencies so it's going to work just 
-fine in whatever Symfony version you have. So I'll extend it and then use a 
-really nice feature in PHPstorm to tell me the three abstract methods that I 
-need to fill in. 
+    {# app/Resources/views/Cookie/index.html.twig #}
+    {# ... #}
 
-So let me back up because I haven't actually told you what these voters do. First 
-let me show you how I want our code to look when we're finished. Instead of 
-doing the logic manually I'm going to use the `isGranted` function, pass it a 
-string: NOM which is something I'm making up -- you'll see why it's important 
-in a second -- and then pass the cookie object as the second argument to 
-`isGranted`. 
+    {% for cookie in cookies %}
+        {# ... #}
 
-The `isGranted` shortcut is new to 2.6 but all it does is go out to the 
-security.context service and call `isGranted` on it. So this is exactly what 
-you're using in earlier projects. If you don't have the shortcut method just 
-go out to the security.context service manually. Behind the scenes, whenever 
-you use the `isGranted` function Symfony calls out to a bunch of voters and 
-asks each of them if they can figure out whether or not we should have access. 
-For example, whenever you pass `ROLE_SOMETHING` to `isGranted` like `ROLE_USER` 
-there's a role of voter class which tries to figure out whether the current 
-user has whatever role you're asking about.
+        {% if cookie.bakerUsername == app.user.username %}
+            <form action="{{ path('cookie_nom', {'id': cookie.id}) }}" method="POST">
+                <button type="submit" class="btn">NOM! <i class="glyphicon glyphicon-cutlery"></i></button>
+            </form>
+        {% endif %}
 
-What most people don't realize is that you can invent these strings. So in this 
-case I'm just inventing nom and we're going to add a new voter into that system 
-that says: "Hey Symfony! Whenever the NOM attribute is passed to `isGranted` 
-call me!" To get that to work we just need to fill in the `getSupportedClasses` 
-and the `getSupportedAttributes` function. 
+        {# ... #}
+    {% endfor %}
 
-First in `getSupportedClasses` were going to return the `DeliciousCookie` class 
-string. This tells Symfony that when we pass a delicious cookie object to 
-`isGranted` our voter should be called. We'll do the same thing in 
-`getSupportedAttributes` and we'll return an array with the nom string. This 
-tells Symfony that when we pass nom to `isGranted` that *our* voter should be 
-called. Whenever both of these functions return true the `isGranted` function 
-at the bottom of this class is going to be called. 
+And when it comes to security logic, especially security logic that protects
+cookies, we don't want to repeat it across your application. If you change
+something later and forget to update part of your security, you're going
+to have a big problem. But for now, I'll do it manually and we can see that
+the nom button hides or shows based on which cookies I actually baked.
 
-For now I'll just use the glorious `var_dump` to print the attribute object and 
-user and I'm going to put a die after that. At this point other than the crazy 
-debug code I have at the bottom our voter class is ready to go but Symfony is 
-not going to automatically find it. To tell Symfony about our new voter we're 
-going to need to register it as a service and give it a special tag. I have an 
-app/config/services.yml file which I'm importing from my config.yml so we'll put 
+Creating a Voter
+----------------
+
+So the goal of a voter is to allow us to centralize that logic so we only
+have it in one spot. I'll create a ``Security`` directory which is purely
+for organization and then put a ``CookieVoter`` inside of it. I'm using Symfony 2.6
+for this project, which comes with a fantastic new `AbstractVoter`_ class
+which I'm going to use. If you're using Symfony 2.5 or lower, you can actually
+`find this class on the internet`_ and just use it in your project today.
+Just update the namespace to match your project and then extend it. This
+class doesn't have any external dependencies so it's going to work just fine
+in whatever Symfony version you have.
+
+So I'll extend it and then use a really nice feature in PHPstorm to tell
+me the three abstract methods that I need to fill in::
+
+    // src/AppBundle/Security/CookieVoter.php
+    namespace AppBundle\Security;
+
+    use Symfony\Component\Security\Core\Authorization\Voter\AbstractVoter;
+    use Symfony\Component\Security\Core\User\UserInterface;
+
+    class CookieVoter extends AbstractVoter
+    {
+        protected function getSupportedClasses()
+        {
+            // todo
+        }
+
+        protected function getSupportedAttributes()
+        {
+            // todo
+        }
+
+        protected function isGranted($attribute, $object, $user = null)
+        {
+            // todo
+        }
+    }
+
+But What does a Voter Do?
+-------------------------
+
+So let me back up because I haven't actually told you what these voters do.
+First let me show you how I want our code to look when we're finished. Instead
+of doing the logic manually I'm going to use the ``isGranted`` function, pass
+it a  string: ``NOM`` which is something I'm making up -- you'll see why
+it's important in a second -- and then pass the ``$cookie`` object as the
+second argument to  ``isGranted``::
+
+    // src/AppBundle/Controller/CookieController.php
+    // ...
+
+    public function nomAction(Request $request, $id)
+    {
+        $em = $this->getDoctrine()->getManager();
+        $cookie = $em->getRepository('AppBundle:DeliciousCookie')
+            ->find($id);
+
+        // ...
+
+        if (!$this->isGranted('NOM', $cookie)) {
+            throw $this->createNotFoundException('You did not bake this delicious cookie!');
+        }
+        // ...
+    }    
+
+The ``isGranted`` shortcut is new to 2.6 but all it does is go out to the 
+``security.context`` service and call ``isGranted`` on it. So this is exactly
+what you're using in earlier projects. If you don't have the shortcut method
+just  go out to the ``security.context`` service manually.
+
+Behind the scenes, whenever you use the ``isGranted`` function, Symfony calls
+out to a bunch of voters and asks each of them if they can figure out whether
+or not we should have access. For example, whenever you pass ``ROLE_SOMETHING``
+to ```isGranted``` like ```ROLE_USER``, there's a ``RoleVoter``` class which
+tries to figure out whether the current user has whatever role you're asking
+about.
+
+What most people don't realize is that you can invent these strings. So in
+this case I'm just inventing ``NOM`` and we're going to add a new voter into
+that system that says: "Hey Symfony! Whenever the ``NOM`` attribute is passed
+to ``isGranted``, call me!" To get that to work we just need to fill in the
+``getSupportedClasses`` and the ``getSupportedAttributes`` functions.
+
+Filling in CookieVoter
+----------------------
+
+First, in ``getSupportedClasses``, were going to return the ``DeliciousCookie``
+class  string::
+
+    // src/AppBundle/Security/CookieVoter.php
+    // ...
+
+    protected function getSupportedClasses()
+    {
+        return array('AppBundle\Entity\DeliciousCookie');
+    }
+
+This tells Symfony that when we pass a ``DeliciousCookie`` object to ``isGranted``,
+our voter should be called. We'll do the same thing in ``getSupportedAttributes``
+and we'll return an array with the ``NOM`` string::
+
+    // src/AppBundle/Security/CookieVoter.php
+    // ...
+
+    protected function getSupportedAttributes()
+    {
+        return array('NOM');
+    }
+
+This tells Symfony that when we pass ``NOM`` to ``isGranted`` that *our*
+voter should be called. Whenever both of these functions return ``true``,
+the ```isGranted``` function at the bottom of this class is going to be called. 
+
+For now I'll just use the glorious ``var_dump`` to print the attribute object
+and  user and I'm going to put a die after that::
+
+    // src/AppBundle/Security/CookieVoter.php
+    // ...
+
+    protected function isGranted($attribute, $object, $user = null)
+    {
+        var_dump($attribute, $object, $user);die;
+    }
+
+Registering and Tagging your Voter
+----------------------------------
+
+At this point, other than the crazy debug code I have at the bottom, our voter
+class is ready to go. But Symfony is not going to automatically find it.
+To tell Symfony about our new voter we're going to need to register it as
+a service and give it a special tag.
+
+I have an  app/config/services.yml file which I'm importing from my config.yml so we'll put 
 the service there. The name doesn't matter but try to keep it relatively short. 
 And the autocompleting I'm getting is from the nice Symfony 2 plugin for 
 PHPStorm. Our class doesn't have any constructor arguments yet so I'm just 
@@ -151,7 +373,7 @@ Let's login as Leanna, password cookie, and.....COOKIES FOR EVERYBODY!
 I want to do one more crazy thing. Let's pretend like we want to be able 
 to donate our cookies to friends. Now I know that's crazy why would you donate 
 cookies to other people but let's just try it out. I don't actually have the 
-logic for this but that's okay. Let's go into `index.html.twig' and add a link 
+logic for this but that's okay. Let's go into ``index.html.twig`` and add a link 
 for this. We're just going to see if we can get the link to hide and show 
 correctly. Just like before I'm inventing this donate string. If we don't do 
 anything else and refresh we'll actually see that the link doesn't show up. If no voters 
@@ -206,3 +428,7 @@ If you can somehow write a few lines of code to figure out if a user has
 access to do something do that in a voter don't worry about ACL.
 
 Alright see you guys next time! 
+
+.. _`Error Pages`: https://knpuniversity.com/screencast/symfony2-ep3/error-pages
+.. _`AbstractVoter`: http://symfony.com/blog/new-in-symfony-2-6-simpler-security-voters
+.. _`find this class on the internet`: https://github.com/symfony/symfony/blob/master/src/Symfony/Component/Security/Core/Authorization/Voter/AbstractVoter.php
