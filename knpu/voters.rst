@@ -629,7 +629,7 @@ Now, some of you may be thinking that I'm crazy for having these strings
 like ``NOM`` and ``DONATE`` all over my application. And actually, I agree
 with you. Normally whenever I have a naked string somewhere I make it a constant
 instead. So in this case I'll create two constants: ``ATTRIBUTE_NOM`` and
-``ATTRIBUTE_DONATE``.
+``ATTRIBUTE_DONATE``::
 
     // src/AppBundle/Security/CookieVoter.php
     // ...
