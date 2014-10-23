@@ -1,0 +1,62 @@
+diff --git a/src/AppBundle/Controller/CookieController.php b/src/AppBundle/Controller/CookieController.php
+index 6a61723..7988ee4 100644
+--- a/src/AppBundle/Controller/CookieController.php
++++ b/src/AppBundle/Controller/CookieController.php
+@@ -2,6 +2,7 @@
+ 
+ namespace AppBundle\Controller;
+ 
++use AppBundle\Security\CookieVoter;
+ use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Route;
+ use Sensio\Bundle\FrameworkExtraBundle\Configuration\Method;
+@@ -37,7 +38,7 @@ class CookieController extends Controller
+             throw $this->createNotFoundException();
+         }
+ 
+-        if (!$this->isGranted('NOM', $cookie)) {
++        if (!$this->isGranted(CookieVoter::ATTRIBUTE_NOM, $cookie)) {
+             throw $this->createNotFoundException('You did not bake this delicious cookie!');
+         }
+ 
+diff --git a/src/AppBundle/Security/CookieVoter.php b/src/AppBundle/Security/CookieVoter.php
+index e996e75..205f672 100644
+--- a/src/AppBundle/Security/CookieVoter.php
++++ b/src/AppBundle/Security/CookieVoter.php
+@@ -8,6 +8,9 @@ use Symfony\Component\Security\Core\User\UserInterface;
+ 
+ class CookieVoter extends AbstractVoter
+ {
++    const ATTRIBUTE_NOM = 'NOM';
++    const ATTRIBUTE_DONATE = 'DONATE';
++
+     private $container;
+ 
+     public function __construct(ContainerInterface $container)
+@@ -32,7 +35,7 @@ class CookieVoter extends AbstractVoter
+      */
+     protected function getSupportedAttributes()
+     {
+-        return array('NOM', 'DONATE');
++        return array(self::ATTRIBUTE_NOM, self::ATTRIBUTE_DONATE);
+     }
+ 
+     /**
+@@ -57,7 +60,7 @@ class CookieVoter extends AbstractVoter
+         $authChecker = $this->container->get('security.authorization_checker');
+ 
+         switch ($attribute) {
+-            case 'NOM':
++            case self::ATTRIBUTE_NOM:
+                 if ($authChecker->isGranted('ROLE_COOKIE_MONSTER')) {
+                     return true;
+                 }
+@@ -67,7 +70,7 @@ class CookieVoter extends AbstractVoter
+                 }
+ 
+                 return false;
+-            case 'DONATE':
++            case self::ATTRIBUTE_DONATE:
+                 return stripos($object->getFlavor(), 'chocolate') === false;
+         }
+ 
