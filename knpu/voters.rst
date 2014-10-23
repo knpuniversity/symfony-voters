@@ -631,14 +631,58 @@ with you. Normally whenever I have a naked string somewhere I make it a constant
 instead. So in this case I'll create two constants: ``ATTRIBUTE_NOM`` and
 ``ATTRIBUTE_DONATE``.
 
-Then we can use these inside of `getSupportedAttributes` and later we can use 
-it inside of the `isGranted` function. This helps out with typos but it also 
-allows us, if we want to, to put some PHP documentation above those constants so 
-future us can come and read what nom and donate actually mean.
+    // src/AppBundle/Security/CookieVoter.php
+    // ...
+    
+    class CookieVoter extends AbstractVoter
+    {
+        const ATTRIBUTE_NOM = 'NOM';
+        const ATTRIBUTE_DONATE = 'DONATE';
+        
+        // ...
+        
+        protected function getSupportedAttributes()
+        {
+            return array(self::ATTRIBUTE_NOM, self::ATTRIBUTE_DONATE);
+        }
+        
+        // ...
+        
+        protected function isGranted($attribute, $object, $user = null)
+        {
+            // ...
 
-We can also go into our cookie controller and use the constant there. And yes 
-we can also use the constants inside of the twig template with twig's constant 
-function but honestly it's kind of ugly so for me I just keep the strings here. 
+            switch ($attribute) {
+                case self::ATTRIBUTE_NOM:
+                    // ...
+                case self::ATTRIBUTE_DONATE:
+                    // ...
+            }
+
+            throw new \LogicException('How did we get here!?');
+        }
+    }
+
+Then we can use these inside of ``getSupportedAttributes`` and later we can
+use it inside of the ``isGranted`` function. This helps out with typos but
+it also  allows us, if we want to, to put some PHP documentation above those
+constants so  future us can come and read what nom and donate actually mean.
+
+We can also go into our ``CookieController`` and use the constant there::
+
+    // src/AppBundle/Controller/CookieController.php
+    // ...
+    
+    if (!$this->isGranted(CookieVoter::ATTRIBUTE_NOM, $cookie)) {
+        throw $this->createNotFoundException('You did not bake this delicious cookie!');
+    }
+
+And yes  we can also use the constants inside of the twig template with twig's
+``constant()`` function, but honestly it's kind of ugly so for me I just
+keep the strings here. 
+
+Go Security Voters Go!
+----------------------
 
 So security voters are all about solving that case when you need figure out if 
 a user has access to do something to a specific object. They help to keep your 
