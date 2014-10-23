@@ -310,103 +310,326 @@ and  user and I'm going to put a die after that::
 Registering and Tagging your Voter
 ----------------------------------
 
-At this point, other than the crazy debug code I have at the bottom, our voter
-class is ready to go. But Symfony is not going to automatically find it.
-To tell Symfony about our new voter we're going to need to register it as
-a service and give it a special tag.
+At this point, other than the crazy debug code I have at the bottom, our
+voter class is ready to go. But Symfony is not going to automatically find
+it. To tell Symfony about our new voter we're going to need to register it
+as a service and give it a special tag.
 
-I have an  app/config/services.yml file which I'm importing from my config.yml so we'll put 
-the service there. The name doesn't matter but try to keep it relatively short. 
-And the autocompleting I'm getting is from the nice Symfony 2 plugin for 
-PHPStorm. Our class doesn't have any constructor arguments yet so I'm just 
-leaving that key off. The really important part is tags. You need to add one 
-tag whose name is security.voter. This is like raising our hand for our voter 
-and saying: "Hey Symfony, whenever somebody calls `isGranted` I want *our* voter 
-to actually be called." 
+I have an ``app/config/services.yml`` file which I'm importing from my ``config.yml``
+file, so we'll put the service there:
 
-So we have the voter, we have the service with the tag so let's try it out. 
-When we refresh... Bam! We see things dumped out. Proof that our voter is being 
-called. Now here's where things get really really cool. Now in theory because 
-of my access control this voter should never be called unless the user is 
-logged in. But just in case it is let's use `is_object` to check to see if the 
-user is actually logged in. Remember we need to do this because in Symfony 2 if 
-you're anonymous the user is actually set to a string. From here it's pure 
-business logic, if the Baker's username equals the user's username let's give 
-them access. Otherwise let's not give them access. 
+    # app/config/services.yml
+    services:
+        app_cookie_voter:
+            class: AppBundle\Security\CookieVoter
+            tags:
+                - { name: security.voter }
 
-So let's refresh the nom request ... and it works! We're logged in as Ryan and 
-we are actually nomming a Ryan cookie so this make sense. Remember the goal of 
-this was to centralize our logic. So now we can go into our twig template and 
-do the exact same thing there. We'll use the `is_granted` function, pass it nom 
-and pass it the cookie object. And as you might expect when we refresh me the 
-exact same results as before except everything is pulling from that central 
-voter. 
+The name doesn't matter but try to keep it relatively short. And the autocompleting
+I'm getting is from the nice `Symfony2 plugin for PHPStorm`_. Our class
+doesn't have any constructor arguments yet so I'm just leaving that key off.
+
+The really important part is ``tags``. You need to add one tag whose name
+is ``security.voter``. This is like raising our hand for our voter and saying:
+"Hey Symfony, whenever somebody calls ``isGranted`` I want *our* voter to
+actually be called."
+
+So we have the voter, we have the service with the tag so let's try it out!
+When we refresh... Bam! We see things dumped out: proof that our voter is
+being called.
+
+Adding your Cookie-Protecting Biz Logic
+---------------------------------------
+
+Now here's where things get really really cool. Now in theory because of
+my ``access_control``, this voter should never be called unless the user
+is logged in. But just in case it is let's use ``is_object`` to check to
+see if the  user is actually logged in::
+
+    // src/AppBundle/Security/CookieVoter.php
+    // ...
+
+    protected function isGranted($attribute, $object, $user = null)
+    {
+        if (!$user) {
+            return false;
+        }
+
+        // ... todo
+    }
+
+Remember we need to do this because in Symfony 2 if you're anonymous the
+user is actually set to a string. From here it's pure business logic: if
+the Baker's username equals the user's username let's give them access.
+Otherwise let's not give them access::
+
+    // src/AppBundle/Security/CookieVoter.php
+    // ...
+
+    protected function isGranted($attribute, $object, $user = null)
+    {
+        if (!$user) {
+            return false;
+        }
+
+        if ($object->getBakerUsername() == $user->getUsername()) {
+            return true;
+        }
+
+        return false;
+    }
+
+So let's refresh the "nom" request ... and it works! We're logged in as Ryan
+and we are actually nomming a Ryan cookie so this make sense. Remember the
+goal of this was to centralize our logic. So now we can go into our Twig
+template and do the exact same thing there. We'll use the ``is_granted``
+function, pass it nom and pass it the ``cookie`` object:
+
+.. code-block:: html+jinja
+
+    {# app/Resources/views/Cookie/index.html.twig #}
+    {# ... #}
+
+    {% for cookie in cookies %}
+        {# ... #}
+
+        {% if is_granted('NOM', cookie) %}
+            <form action="{{ path('cookie_nom', {'id': cookie.id}) }}" method="POST">
+                <button type="submit" class="btn">NOM! <i class="glyphicon glyphicon-cutlery"></i></button>
+            </form>
+        {% endif %}
+
+        {# ... #}
+    {% endfor %}
+
+And as you might expect, when we refresh, we see the exact same results as
+before except everything is pulling from that central voter. 
+
+Giving a ``ROLE_COOKIE_MONSTER`` User Special Access
+----------------------------------------------------
 
 Now with everything centralized I want to make things a little bit more 
-difficult. In security.yml I've given the Leanna user a special role called 
-`ROLE_COOKIE_MONSTER` if you have this role I want to make it so you can eat 
-any cookie even if you didn't bake it. Seems like a jerk thing to do but 
-let's try it out. To do this, we basically want to call the `isGranted` function 
-on the security system from inside of our voter. Now, out-of-the-box we don't 
-have access to do this so we're going to need to do a little bit of dependency 
-injection. If you're thinking that we'll inject the security context, you're 
+difficult. In ``security.yml`` I've given the ``leanna`` user a special role
+called ``ROLE_COOKIE_MONSTER``:
+
+.. code-block:: yaml
+
+    # app/config/security.yml
+    security:
+        # ...
+
+        providers:
+            in_memory:
+                memory:
+                    users:
+                        ryan:  { password: cookie, roles: 'ROLE_COOKIE_ENJOYER' }
+                        leanna: { password: cookie, roles: 'ROLE_COOKIE_MONSTER' }
+
+If you have this role, I want to make it so you can eat any cookie even if
+you didn't bake it. Seems like a jerk thing to do but let's try it out.
+
+To do this, we basically want to call the ``isGranted`` function on the security
+system from inside of our voter. Now, out-of-the-box we don't have access
+to do this, so we're going to need to do a little bit of dependency injection.
+If you're thinking that we'll inject the ``security.context``, you're 
 basically right. The only issue is that because we're inside of the security 
 system if we try to inject the security system into here we're going to get a 
 circular dependency. Instead, I'm going to inject the entire container, which, 
-yes is typically a bad practice but in this case we can't avoid it and it's not
-going to kill us. 
+yes is typically a bad practice, but in this case we can't avoid it and it's
+not going to kill us::
 
-Head back to services.yml add an arguments key now that we have a construct 
-function and use `@service_container` to inject the entire container. Back down 
-in `isGranted` we can easily add the logic we need. Now I'm using Symfony 2.6 
-which gives us a brand-new service called `security.authorization_checker`. 
-This is actually a new service for Symfony 2.6. Before it was known as 
-security.context. Now don't worry because security.context still exists and will 
-still exist until Symfony 3.0. So if you're on Symfony 2.6 use the new service 
-name if you're on 2.5 or earlier just use security.context. The nice thing is 
-that both of them have the same `isGranted` function on it which we can use now 
-to check to see if the user has the `ROLE_COOKIE_MONSTER` role. If they do, let's 
-give them access. When we try it out there's no difference and that's a good 
-thing. I'm logged in as Ryan so I don't actually have this role. So I'll logout. 
-Let's login as Leanna, password cookie, and.....COOKIES FOR EVERYBODY! 
+    // src/AppBundle/Security/CookieVoter.php
+    // ...
+    
+    class CookieVoter extends AbstractVoter
+    {
+        private $container;
+
+        public function __construct(ContainerInterface $container)
+        {
+            $this->container = $container;
+        }
+        
+        // ...
+    }
+
+Head back to ``services.yml`` add an arguments key now that we have a
+``__construct`` function and use ``@service_container`` to inject the entire
+container:
+
+.. code-block:: yaml
+
+    # app/config/services.yml
+    services:
+        app_cookie_voter:
+            class: AppBundle\Security\CookieVoter
+            arguments: ["@service_container"]
+            tags:
+                - { name: security.voter }
+
+Back down in ``isGranted`` we can easily add the logic we need::
+
+    // src/AppBundle/Security/CookieVoter.php
+    // ...
+
+    protected function isGranted($attribute, $object, $user = null)
+    {
+        if (!$user) {
+            return false;
+        }
+
+        // in 2.5 and earlier, use this:
+        // $this->container->get('security.context');
+        // security.context exists in 2.6, but is deprecated
+        $authChecker = $this->container->get('security.authorization_checker');
+
+        if ($authChecker->isGranted('ROLE_COOKIE_MONSTER')) {
+            return true;
+        }
+
+        if ($object->getBakerUsername() == $user->getUsername()) {
+            return true;
+        }
+
+        return false;
+    }
+
+Now I'm using Symfony 2.6 which gives us a brand-new service called ``security.authorization_checker``.
+This is actually a new service for Symfony 2.6. Before it was known as
+``security.context``. Now don't worry because ``security.context`` still
+exists and will still exist until Symfony 3.0. So if you're on Symfony 2.6
+use the new service name. If you're on 2.5 or earlier just use ``security.context``.
+The nice thing is that both of them have the same ``isGranted`` function
+on it which we can use now to check to see if the user has the ``ROLE_COOKIE_MONSTER``
+role. If they do, let's give them access.
+
+When we try it out there's no difference and that's a good thing. I'm logged
+in as ``ryan`` so I don't actually have this role. So I'll logout. Let's
+login as ``leanna``, password ``cookie``, and.....COOKIES FOR EVERYBODY! 
+
+Adding Multiple Actions (NOM, DONATE) to 1 Voter
+------------------------------------------------
 
 I want to do one more crazy thing. Let's pretend like we want to be able 
 to donate our cookies to friends. Now I know that's crazy why would you donate 
-cookies to other people but let's just try it out. I don't actually have the 
-logic for this but that's okay. Let's go into ``index.html.twig`` and add a link 
-for this. We're just going to see if we can get the link to hide and show 
-correctly. Just like before I'm inventing this donate string. If we don't do 
-anything else and refresh we'll actually see that the link doesn't show up. If no voters 
-vote on our attribute then by default it's going to return false. Now why is
-our voter not voting on it? Because of the `getSupportedAttributes` function. 
+cookies to other people? But let's just try it out. I don't actually have the 
+logic for this but that's okay. Let's go into ``index.html.twig`` and add
+a link for this. We're just going to see if we can get the link to hide and
+show correctly:
 
-Let's update that to return true for both the nom and donut...I mean donate. 
-Now `isGranted` is going to be handling two different attributes, nom and 
-donate. This is the perfect situation for everyone's beloved switch 
-case statement. So let's set that up, and we have two cases one for nom and one 
-for donate. And the logic for nom is exactly what we had before so I'll just 
-copy that, paste that up and if it doesn't get into either those if statements 
-we'll return false. 
+.. code-block:: html+jinja
 
-For the donate case, again, we can do literally anything we want to inside of
-this. If we want to go out and make crazy database queries to figure out 
+    {# app/Resources/views/Cookie/index.html.twig #}
+    {# ... #}
+
+    {% for cookie in cookies %}
+        {# ... #}
+
+        <td>
+            {% if is_granted('DONATE', cookie) %}
+                <a href="">Donate</a>
+            {% endif %}
+        </td>
+
+        {# ... #}
+    {% endfor %}    
+
+Just like before I'm inventing this ``DONATE`` string. If we don't do anything
+else and refresh, we'll actually see that the link doesn't show up. If no
+voters vote on our attribute, then by default it's going to return false.
+Now why is our voter not voting on it? Because of the ``getSupportedAttributes``
+function. 
+
+Let's update that to return true for both ``NOM`` and ``DONUT``...I mean
+``DONATE``::
+
+    // src/AppBundle/Security/CookieVoter.php
+    // ...
+
+    protected function getSupportedAttributes()
+    {
+        return array('NOM');
+    }
+
+Now ``isGranted`` is going to be handling two different attributes, ``NOM``
+and ``DONATE``. This is the perfect situation for everyone's beloved switch 
+case statement. So let's set that up, and we have two cases one for ``NOM``
+and one for ``DONATE``. And the logic for ``NOM`` is exactly what we had before
+so I'll just copy that, paste that up and if it doesn't get into either those
+if statements we'll return false::
+
+    protected function isGranted($attribute, $object, $user = null)
+    {
+        if (!$user) {
+            return false;
+        }
+
+        $authChecker = $this->container->get('security.authorization_checker');
+
+        switch ($attribute) {
+            case 'NOM':
+                if ($authChecker->isGranted('ROLE_COOKIE_MONSTER')) {
+                    return true;
+                }
+
+                if ($object->getBakerUsername() == $user->getUsername()) {
+                    return true;
+                }
+
+                return false;
+            case 'DONATE':
+                // todo ...
+        }
+
+        return false;
+    }
+
+For the ``DONATE`` case, again, we can do literally anything we want to inside
+of this. If we want to go out and make crazy database queries to figure out 
 something we can do that. In our case since chocolate cookies are the most 
 delicious, let's only give away cookies that aren't chocolate. So, for my crazy 
 business logic I'm just going to see if the word chocolate appears in the name 
 of the cookie. If it does I'm not going to give it away. But if it doesn't you 
-can have it. At the bottom of this function, I still have this false here. This 
-should technically never get hit. Even if we pass something other than nom or 
-donate to `isGranted` Symfony is not going to call our voter because of the 
-`getSupportedAttributes`. 
+can have it::
+
+
+    switch ($attribute) {
+        case 'NOM':
+            // ...
+        case 'DONATE':
+            return stripos($object->getFlavor(), 'chocolate') === false;
+    }
+
+At the bottom of this function, I still have this false here. This should
+technically never get hit. Even if we pass something other than ``NOM`` or 
+``DONATE`` to ``isGranted`` Symfony is not going to call our voter because
+of the  ``getSupportedAttributes``. 
 
 So, you can put anything down here I like to throw an exception just incase 
-something insane happens. But you're going to be fine either way. Cool, let's 
-see which cookies we can giveaway. This time we see the donate link only next 
-to the cookies that aren't chocolate. That's perfect. Now, some of you may be 
-thinking that I'm crazy for having these strings like nom and donate all over 
-my application. And actually, I agree with you. Normally whenever I have a 
-naked string somewhere I make it a constant instead. So in this case I'll create
-two constants: `ATTRIBUTE_NOM` and `ATTRIBUTE_DONATE`. 
+something insane happens. But you're going to be fine either way::
+
+    protected function isGranted($attribute, $object, $user = null)
+    {
+        // ...
+
+        switch ($attribute) {
+            // ...
+        }
+
+        throw new \LogicException('How did we get here!?');
+    }
+
+Cool, let's see which cookies we can giveaway. This time we see the donate
+link only next to the cookies that aren't chocolate. That's perfect.
+
+Let's use some Constants
+------------------------
+
+Now, some of you may be thinking that I'm crazy for having these strings
+like ``NOM`` and ``DONATE`` all over my application. And actually, I agree
+with you. Normally whenever I have a naked string somewhere I make it a constant
+instead. So in this case I'll create two constants: ``ATTRIBUTE_NOM`` and
+``ATTRIBUTE_DONATE``.
 
 Then we can use these inside of `getSupportedAttributes` and later we can use 
 it inside of the `isGranted` function. This helps out with typos but it also 
@@ -432,3 +655,4 @@ Alright see you guys next time!
 .. _`Error Pages`: https://knpuniversity.com/screencast/symfony2-ep3/error-pages
 .. _`AbstractVoter`: http://symfony.com/blog/new-in-symfony-2-6-simpler-security-voters
 .. _`find this class on the internet`: https://github.com/symfony/symfony/blob/master/src/Symfony/Component/Security/Core/Authorization/Voter/AbstractVoter.php
+.. _`Symfony2 Plugin for PHPStorm`: http://confluence.jetbrains.com/display/PhpStorm/Getting+Started+-+Symfony+Development+using+PhpStorm
