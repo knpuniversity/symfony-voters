@@ -353,7 +353,7 @@ see if the  user is actually logged in::
 
     protected function isGranted($attribute, $object, $user = null)
     {
-        if (!$user) {
+        if (!is_object($user)) {
             return false;
         }
 
@@ -370,7 +370,7 @@ Otherwise let's not give them access::
 
     protected function isGranted($attribute, $object, $user = null)
     {
-        if (!$user) {
+        if (!is_object($user)) {
             return false;
         }
 
@@ -476,7 +476,7 @@ Back down in ``isGranted`` we can easily add the logic we need::
 
     protected function isGranted($attribute, $object, $user = null)
     {
-        if (!$user) {
+        if (!is_object($user)) {
             return false;
         }
 
@@ -550,7 +550,7 @@ Let's update that to return true for both ``NOM`` and ``DONUT``...I mean
 
     protected function getSupportedAttributes()
     {
-        return array('NOM');
+        return array('NOM', 'DONATE');
     }
 
 Now ``isGranted`` is going to be handling two different attributes, ``NOM``
@@ -562,7 +562,7 @@ if statements we'll return false::
 
     protected function isGranted($attribute, $object, $user = null)
     {
-        if (!$user) {
+        if (!is_object($user)) {
             return false;
         }
 
