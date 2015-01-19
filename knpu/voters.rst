@@ -141,7 +141,9 @@ you didn't bake this!"::
         // ...
 
         if ($cookie->getBakerUsername() != $this->getUser()->getUsername()) {
-            throw $this->createNotFoundException('You did not bake this delicious cookie!');
+            throw new \Symfony\Component\Security\Core\Exception\AccessDeniedException(
+                'You did not bake this delicious cookie!'
+            );
         }
         // ...
     }
@@ -243,7 +245,9 @@ second argument to  ``isGranted``::
         // ...
 
         if (!$this->isGranted('NOM', $cookie)) {
-            throw $this->createNotFoundException('You did not bake this delicious cookie!');
+            throw new \Symfony\Component\Security\Core\Exception\AccessDeniedException(
+                'You did not bake this delicious cookie!'
+            );
         }
         // ...
     }    
@@ -676,7 +680,9 @@ We can also go into our ``CookieController`` and use the constant there::
     // ...
     
     if (!$this->isGranted(CookieVoter::ATTRIBUTE_NOM, $cookie)) {
-        throw $this->createNotFoundException('You did not bake this delicious cookie!');
+        throw new \Symfony\Component\Security\Core\Exception\AccessDeniedException(
+            'You did not bake this delicious cookie!'
+        );
     }
 
 And yes  we can also use the constants inside of the twig template with twig's
