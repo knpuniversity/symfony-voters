@@ -1,5 +1,5 @@
 diff --git a/src/AppBundle/Controller/CookieController.php b/src/AppBundle/Controller/CookieController.php
-index 6a61723..7988ee4 100644
+index 2459cec..f09cfe7 100644
 --- a/src/AppBundle/Controller/CookieController.php
 +++ b/src/AppBundle/Controller/CookieController.php
 @@ -2,6 +2,7 @@
@@ -16,7 +16,7 @@ index 6a61723..7988ee4 100644
  
 -        if (!$this->isGranted('NOM', $cookie)) {
 +        if (!$this->isGranted(CookieVoter::ATTRIBUTE_NOM, $cookie)) {
-             throw $this->createNotFoundException('You did not bake this delicious cookie!');
+             throw $this->createAccessDeniedException('You did not bake this delicious cookie!');
          }
  
 diff --git a/src/AppBundle/Security/CookieVoter.php b/src/AppBundle/Security/CookieVoter.php

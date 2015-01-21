@@ -11,7 +11,7 @@ index ec79ce6..62acbf2 100644
 +        tags:
 +            - { name: security.voter }
 diff --git a/src/AppBundle/Controller/CookieController.php b/src/AppBundle/Controller/CookieController.php
-index 24f1ec0..6a61723 100644
+index 04e84fd..2459cec 100644
 --- a/src/AppBundle/Controller/CookieController.php
 +++ b/src/AppBundle/Controller/CookieController.php
 @@ -37,7 +37,7 @@ class CookieController extends Controller
@@ -20,7 +20,7 @@ index 24f1ec0..6a61723 100644
  
 -        if ($cookie->getBakerUsername() != $this->getUser()->getUsername()) {
 +        if (!$this->isGranted('NOM', $cookie)) {
-             throw $this->createNotFoundException('You did not bake this delicious cookie!');
+             throw $this->createAccessDeniedException('You did not bake this delicious cookie!');
          }
  
 diff --git a/src/AppBundle/Security/CookieVoter.php b/src/AppBundle/Security/CookieVoter.php

@@ -18,7 +18,7 @@ index f981f69..5f11c1a 100644
                  </tr>
              {% endfor %}
 diff --git a/src/AppBundle/Controller/CookieController.php b/src/AppBundle/Controller/CookieController.php
-index 7dcfb5c..24f1ec0 100644
+index 7dcfb5c..04e84fd 100644
 --- a/src/AppBundle/Controller/CookieController.php
 +++ b/src/AppBundle/Controller/CookieController.php
 @@ -37,6 +37,10 @@ class CookieController extends Controller
@@ -26,7 +26,7 @@ index 7dcfb5c..24f1ec0 100644
          }
  
 +        if ($cookie->getBakerUsername() != $this->getUser()->getUsername()) {
-+            throw $this->createNotFoundException('You did not bake this delicious cookie!');
++            throw $this->createAccessDeniedException('You did not bake this delicious cookie!');
 +        }
 +
          $em->remove($cookie);
