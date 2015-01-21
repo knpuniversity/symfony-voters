@@ -141,7 +141,7 @@ you didn't bake this!"::
         // ...
 
         if ($cookie->getBakerUsername() != $this->getUser()->getUsername()) {
-            throw new \Symfony\Component\Security\Core\Exception\AccessDeniedException(
+            throw $this->createAccessDeniedException(
                 'You did not bake this delicious cookie!'
             );
         }
@@ -245,7 +245,7 @@ second argument to  ``isGranted``::
         // ...
 
         if (!$this->isGranted('NOM', $cookie)) {
-            throw new \Symfony\Component\Security\Core\Exception\AccessDeniedException(
+            throw $this->createAccessDeniedException(
                 'You did not bake this delicious cookie!'
             );
         }
@@ -680,7 +680,7 @@ We can also go into our ``CookieController`` and use the constant there::
     // ...
     
     if (!$this->isGranted(CookieVoter::ATTRIBUTE_NOM, $cookie)) {
-        throw new \Symfony\Component\Security\Core\Exception\AccessDeniedException(
+        throw $this->createAccessDeniedException(
             'You did not bake this delicious cookie!'
         );
     }
