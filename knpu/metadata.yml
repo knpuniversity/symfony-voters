@@ -1,6 +1,8 @@
 title:  Symfony Security Voters (free cookies!)
 summary: |
     
+    **Tutorial has been updated!** See https://knpuniversity.com/screencast/new-in-symfony3/voter
+
     Symfony Voters are the work horses of authorization.
     But they're not well-understood and are totally under-utilized.
     So let's take our wild security business logic and
