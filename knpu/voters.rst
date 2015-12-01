@@ -1,6 +1,11 @@
 Symfony Security Voters (free cookies!)
 =======================================
 
+.. seealso::
+
+    Voters have been updated in Symfony 2.8! Check out our updated tutorial
+    about them: `The new Voter Class`_.
+
 Hey guys! It's getting a little colder in Michigan, Leanna and I are doing
 a little bit of baking, and baking makes me think of security. Specifically
 the kind of security that says: "no you can't eat my cookie because I baked it".
@@ -708,3 +713,5 @@ Alright see you guys next time!
 .. _`AbstractVoter`: http://symfony.com/blog/new-in-symfony-2-6-simpler-security-voters
 .. _`find this class on the internet`: https://github.com/symfony/symfony/blob/master/src/Symfony/Component/Security/Core/Authorization/Voter/AbstractVoter.php
 .. _`Symfony2 Plugin for PHPStorm`: http://confluence.jetbrains.com/display/PhpStorm/Getting+Started+-+Symfony+Development+using+PhpStorm
+.. _`The new Voter Class`: https://knpuniversity.com/screencast/new-in-symfony3/voter
+
